@@ -10,19 +10,20 @@ source:
   sha256: 04fa7c35902a65036a8f5f91dfdd3c87f926e5d54911113028a86bcbd1e2db00
 
 build:
-  noarch: python
+  # not supported by upstream
+  skip: True  # [py<39]
   script: {{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation
   number: 0
 
 requirements:
   host:
-    - python >=3.9,<4.0
+    - python
     - poetry-core >=1.0.0
     - pip
   run:
+    - python
     - filetype >=1.2.0,<2.0.0
     - pydantic >=2,<3
-    - python >=3.9,<4.0
     - langchain-core >=0.3.15,<0.4
     - google-generativeai >=0.8.0,<0.9.0
     - grpcio
