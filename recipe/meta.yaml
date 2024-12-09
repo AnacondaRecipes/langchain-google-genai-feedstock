@@ -48,8 +48,11 @@ test:
 about:
   home: https://github.com/langchain-ai/langchain-google
   summary: An integration package connecting Google's genai package and LangChain
+  description: |
+    This package contains the LangChain integrations for Gemini through their generative-ai SDK.
   license: MIT
-  license_file: LICENSE
+  license_file: pypi/LICENSE
+  licence_family: MIT
 
 extra:
   recipe-maintainers:
