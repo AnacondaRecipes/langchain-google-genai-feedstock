@@ -85,7 +85,9 @@ about:
     This package contains the LangChain integrations for Gemini through their generative-ai SDK.
   license: MIT
   license_file: pypi/LICENSE
-  licence_family: MIT
+  license_family: MIT
+  doc_url: https://python.langchain.com/api_reference/google_genai
+  dev_url: https://github.com/langchain-ai/langchain-google/tree/main/libs/genai
 
 extra:
   recipe-maintainers:
