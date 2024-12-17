@@ -19,6 +19,8 @@ source:
 build:
   # not supported by upstream
   skip: True  # [py<39]
+  # langchain-core missing for s390x
+  skip: True  # [s390x]
   script: cd pypi && {{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation
   number: 0
 
