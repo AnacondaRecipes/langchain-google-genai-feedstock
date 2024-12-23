@@ -1,4 +1,7 @@
-{% set name = "langchain-google-genai" %}
+{% set name_dev = "langchain-google" %}
+{% set name_proj = "genai" %}
+{% set name = name_dev + "-" + name_proj %}
+{% set alt_name = name.replace('-', '_') %}
 {% set version = "2.0.6" %}
 
 package:
@@ -6,42 +9,85 @@ package:
   version: {{ version }}
 
 source:
-  url: https://pypi.org/packages/source/{{ name[0] }}/{{ name }}/langchain_google_genai-{{ version }}.tar.gz
-  sha256: 04fa7c35902a65036a8f5f91dfdd3c87f926e5d54911113028a86bcbd1e2db00
+  - url: https://pypi.org/packages/source/{{ name[0] }}/{{ name }}/{{ alt_name }}-{{ version }}.tar.gz
+    sha256: 04fa7c35902a65036a8f5f91dfdd3c87f926e5d54911113028a86bcbd1e2db00
+    folder: pypi
+  - url: https://github.com/langchain-ai/{{ name_dev }}/archive/refs/tags/libs/{{ name_proj }}/v{{ version }}.tar.gz
+    sha256: c9eab95f4be7dfdb53c0c848de76c48409da4ed4fd0f317e1b6fa2f72f82db34
+    folder: gh
 
 build:
-  noarch: python
-  script: {{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation
+  # not supported by upstream
+  skip: True  # [py<39]
+  # langchain-core missing for s390x
+  skip: True  # [s390x]
+  script: cd pypi && {{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation
   number: 0
 
 requirements:
   host:
-    - python >=3.9,<4.0
+    - python
     - poetry-core >=1.0.0
     - pip
   run:
+    - python
     - filetype >=1.2.0,<2.0.0
     - pydantic >=2,<3
-    - python >=3.9,<4.0
     - langchain-core >=0.3.15,<0.4
     - google-generativeai >=0.8.0,<0.9.0
     - grpcio
   run_constrained:
     - pillow >=10.1.0,<11.0.0
 
+# ignoring tests because of missing definition of ChatModelIntegrationTests and ChatModelUnitTests
+{% set tests_to_ignore = "--ignore=gh/libs/genai/tests/integration_tests/test_standard.py" %}
+{% set tests_to_ignore = tests_to_ignore + " --ignore=gh/libs/genai/tests/unit_tests/test_standard.py" %}
+
+# ignoring test modules that rely authentication with google core api
+# not clear where the problem lays, however the pattern observed is that the following call stack fails with some form of
+# DNS resolution failure
+# langchain_core/language_models/chat_models.py:invoke()
+# --> [...] --> langchain_google_genai/chat_models.py:946:_generate() --> [...]
+# --> google/ai/generativelanguage_v1beta/services/generative_service/client.py:generate_conten() --> [...] 
+# --> google/api_core/retry/retry_unary.py:293:retry_wrapped_func() --> [...]
+# --> google/api_core/exceptions.py:616:from_grpc_error() -->
+# rpc_exc = <_InactiveRpcError of RPC that terminated with:
+#   status = StatusCode.UNAVAILABLE
+#   details = "DNS resolution failed for...ot ARES_SUCCESS qtype=A name=No-such-endpoint-to-prevent-hitting-real-backend is_balancer=0: Domain name not found"}"
+{% set tests_to_ignore = tests_to_ignore + " --ignore=gh/libs/genai/tests/integration_tests/test_llms.py" %}
+{% set tests_to_ignore = tests_to_ignore + " --ignore=gh/libs/genai/tests/integration_tests/test_function_call.py" %}
+{% set tests_to_ignore = tests_to_ignore + " --ignore=gh/libs/genai/tests/integration_tests/test_tools.py" %}
+{% set tests_to_ignore = tests_to_ignore + " --ignore=gh/libs/genai/tests/integration_tests/test_chat_models.py" %}
+{% set tests_to_ignore = tests_to_ignore + " --ignore=gh/libs/genai/tests/integration_tests/test_callbacks.py" %}
+{% set tests_to_skip = "test_embed_documents or test_embed_documents_consistency or test_embed_documents_quality or test_embed_query_different_lengths" %}
+
+# skipping tests that return error about GOOGLE_API_KEY not being set up
+{% set tests_to_skip = tests_to_skip + " or test_google_generativeai_call or test_google_generativeai_generate or test_generativeai_stream" %}
+{% set tests_to_skip = tests_to_skip + " or test_safety_settings_gemini or test_generativeai_get_num_tokens_gemini" %}
+
 test:
+  source_files:
+    - gh/libs/genai/tests
   imports:
     - langchain_google_genai
   commands:
     - pip check
+    - pytest -v {{ tests_to_ignore }} -k "not ({{ tests_to_skip }})" gh/libs/genai/tests
   requires:
     - pip
+    - pytest
+    - numpy
 
 about:
   home: https://github.com/langchain-ai/langchain-google
   summary: An integration package connecting Google's genai package and LangChain
+  description: |
+    This package contains the LangChain integrations for Gemini through their generative-ai SDK.
   license: MIT
-  license_file: LICENSE
+  license_file: pypi/LICENSE
+  license_family: MIT
+  doc_url: https://python.langchain.com/api_reference/google_genai
+  dev_url: https://github.com/langchain-ai/langchain-google/tree/main/libs/genai
 
 extra:
   recipe-maintainers:
